@@ -20,23 +20,18 @@ namespace MasterChess
             Vector2Int castlePieceOrigin, castlePieceDestination;
         };
 
-        struct IListener
-        {
-            virtual void OnExecuteCastle(CastleMovement* castle) = 0;
-            virtual void OnUndoCastle(CastleMovement* castle) = 0;
-        };
-
-        King(IPlayer* player, vector<IPiece*> rookPieces, IListener* listener);
+        King(IPlayer* player, vector<IPiece*> rookPieces);
 
         char Id() const override;
 
         MovementMap PossibleMovements() override;
 
-        IListener* Listener() const;
+        vector<IPiece*> CastlePieces() const { return castlePieces; }
+
+        IPiece* CastlePiece(int i) const { return castlePieces[i]; }
 
     private:
         vector<IPiece*> castlePieces;
-        IListener* listener;
         bool IsAttacked(const Vector2Int& position) const;
     };
 }

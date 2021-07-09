@@ -61,16 +61,16 @@ namespace Arduino
         }
         auto x = v1 ^ v2;
         for (int i = 0; i < 8; ++i)
-            for (int j = 0; j < 8; ++j)
+        for (int j = 0; j < 8; ++j)
+        {
+            if (x(i, j))
             {
-                if (x(i, j))
-                {
-                    auto p = At({i, j});
-                    if (!p || !filter(p)) goto start;
-                    selectedPiece = p;
-                    return p;
-                }
+                auto p = At({i, j});
+                if (!p || !filter(p)) goto start;
+                selectedPiece = p;
+                return p;
             }
+        }
         throw std::runtime_error("Invalid!");
     }
 
@@ -104,16 +104,16 @@ namespace Arduino
         }
         auto x = v1 ^ v2;
         for (int i = 0; i < 8; ++i)
-            for (int j = 0; j < 8; ++j)
+        for (int j = 0; j < 8; ++j)
+        {
+            if (x(i, j))
             {
-                if (x(i, j))
-                {
-                    if (!filter({i, j}))
-                        goto start;
-                    selectedPiece = nullptr;
-                    return {i, j};
-                }
+                if (!filter({i, j}))
+                    goto start;
+                selectedPiece = nullptr;
+                return {i, j};
             }
+        }
         throw std::runtime_error("Invalid!");
     }
 
@@ -212,6 +212,12 @@ namespace Arduino
             for (auto [pl, mask] : map)
                 Lighten(pl->Color(), mask);
         }
+    }
+
+    void ArduinoChessBoard::OnGameStart(MasterChess::Game* game)
+    {
+        ConsoleChessBoard::OnGameStart(game);
+        CheckBoard();
     }
 
     void ArduinoChessBoard::Lighten(uint32_t color, Matrix8x8 mat) const

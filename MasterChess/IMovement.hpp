@@ -3,7 +3,6 @@
 namespace MasterChess
 {
     struct IPiece;
-
     /// <summary>
     /// Abstração de um movimento do jogo.
     /// </summary>

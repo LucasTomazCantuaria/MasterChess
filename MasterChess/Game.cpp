@@ -22,12 +22,15 @@ namespace MasterChess
         players(move(players)),
         pieces(move(pieces))
     {
-
+        AddListener(Board());
+        for (auto&& player : Players())
+            AddListener(player->Input());
     }
 
     bool Game::ValidateMovement(IMovement* movement)
     {
         movement->Execute();
+        listener.OnMovementExecution(movement);
         return true;
     }
 
@@ -38,9 +41,7 @@ namespace MasterChess
 
     Game::Result Game::Play()
     {
-        for (auto&& ptr : Players())
-            ptr->Input()->OnGameStart(this);
-        Board()->OnGameStart(this);
+        listener.OnGameStart(this);
         auto&& now = std::chrono::high_resolution_clock::now;
         size_t i = 0;
         while (!IsGameOver())
@@ -58,6 +59,9 @@ namespace MasterChess
         return {};
     }
 
-
+    void Game::AddListener(IGameListener* listener)
+    {
+        this->listener.AddListener(listener);
+    }
 
 }

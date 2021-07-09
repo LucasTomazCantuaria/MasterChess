@@ -4,7 +4,6 @@ find_package(fmt CONFIG REQUIRED)
 
 set(Windows-Targets
     "Console.hpp" "Console.cpp"
-    "SerialPort.hpp" "SerialPort.cpp"
 )
 
 add_library(Windows STATIC ${Windows-Targets})

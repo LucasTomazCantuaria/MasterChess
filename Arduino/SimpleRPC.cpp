@@ -23,7 +23,7 @@ namespace Arduino
         return v;
     }
     
-    SimpleRPC::SimpleRPC(ISerialPort* serialPort) : serialPort(serialPort)
+    SimpleRPC::SimpleRPC(SerialPort* serialPort) : serialPort(serialPort)
     {
         signatures.reserve(0xFF);
         UpdateSignatures();
@@ -32,15 +32,16 @@ namespace Arduino
     void SimpleRPC::UpdateSignatures()
     {
         signatures.clear();
-        char buffer[0x100];
+        char buffer[0x1000];
         size_t readBytes;
         do
         {
+            serialPort->Clear();
             serialPort->Write("\xFF");
             readBytes = serialPort->Read(buffer, std::size(buffer) * sizeof(char));
         } while (readBytes == 0);
         binarySignature = { buffer, buffer + readBytes };
-        header = (Header*)binarySignature.c_str();
+        header = (Header*)binarySignature.data();
         auto sv = std::string_view{ binarySignature.data() + sizeof(Header) + 1, binarySignature.length() - sizeof(Header) };
         for (auto s : Split(sv, '\0')) if (!s.empty())
             signatures.emplace_back(s);

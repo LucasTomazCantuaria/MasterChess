@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <functional>
 
-#include "ISerialPort.hpp"
+#include "SerialPort.hpp"
 #include "Matrix8x8.h"
 #include "SimpleRPC.hpp"
 
@@ -12,7 +12,7 @@ namespace Arduino
 
     struct ArduinoExported
     {
-        explicit ArduinoExported(ISerialPort* serial) : rpc(serial)
+        explicit ArduinoExported(SerialPort* serial) : rpc(serial)
         {
             read = rpc.CreateRemoteProcessCall<uint64_t>(0);
             setBrightness = rpc.CreateRemoteProcessCall<uint8_t, uint8_t>(1);
@@ -23,7 +23,7 @@ namespace Arduino
         void Lighten(uint32_t color, uint64_t area) const { return lighten(color, area); }
         Matrix8x8 ReadMatrix() const { return Read(); }
     private:
-        ISerialPort* serial;
+        SerialPort* serial;
         SimpleRPC rpc;
         function<uint64_t()> read;
         function<void(uint8_t)> setBrightness;

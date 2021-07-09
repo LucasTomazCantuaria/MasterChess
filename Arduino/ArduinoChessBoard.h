@@ -29,6 +29,8 @@ namespace Arduino
 
         void CheckBoard() const;
 
+        void OnGameStart(MasterChess::Game* game) override;
+
     private:
         ArduinoExported* arduino;
         IPiece* selectedPiece;

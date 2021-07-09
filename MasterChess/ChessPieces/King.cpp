@@ -21,7 +21,6 @@ namespace MasterChess
 
     void King::CastleMovement::Execute()
     {
-        if (auto listener = Piece()->Listener()) listener->OnExecuteCastle(this);
         auto board = castlePiece->Board();
         board->RepositionPiece(castlePiece, castlePieceDestination);
         Movement::Execute();
@@ -39,7 +38,7 @@ namespace MasterChess
         return castlePiece;
     }
 
-    King::King(IPlayer* player, vector<IPiece*> rookPieces, IListener* listener) :
+    King::King(IPlayer* player, vector<IPiece*> rookPieces) :
         MultiPositionChessPiece(player,
         {
             Vector2Int::Left,
@@ -51,7 +50,7 @@ namespace MasterChess
             Vector2Int::Down,
             Vector2Int::Down + Vector2Int::Left,
         }),
-        castlePieces(move(rookPieces)), listener(listener)
+        castlePieces(move(rookPieces))
     {
 
     }
@@ -84,11 +83,6 @@ namespace MasterChess
             map.emplace(ptr->Destination(), move(ptr));
         }
         return map;
-    }
-
-    King::IListener* King::Listener() const
-    {
-        return listener;
     }
 
     bool King::IsAttacked(const Vector2Int& position) const

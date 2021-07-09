@@ -12,7 +12,7 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 set(PROC_LIBS Threads::Threads)
 
-set(ConChessLibs MasterChess Math Arduino)
+set(ConChessLibs MasterChess Math Arduino Unity)
 
 if(WIN32)
     find_package(fmt CONFIG REQUIRED)
@@ -31,6 +31,8 @@ add_subdirectory("Math")
 add_subdirectory("MasterChess")
 
 add_subdirectory("Arduino")
+
+add_subdirectory("Unity")
 
 add_executable(ConChess "Source.cpp")
 target_link_libraries(ConChess PRIVATE ${ConChessLibs})

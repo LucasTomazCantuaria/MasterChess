@@ -1,4 +1,6 @@
 #pragma once
+#include "IGameListener.hpp"
+
 #include <vector>
 #include <chrono>
 #include <memory>
@@ -58,11 +60,16 @@ namespace MasterChess
 
         Movement* LastMovement() { return !movements.empty() ? &movements.back() : nullptr; }
 
+        void AddListener(IGameListener* listener);
+
+        IPlayer* Player(int i) const { return players[i].get(); }
+
     private:
         unique_ptr<IBoard> board;
         vector<unique_ptr<IPlayer>> players;
         vector<unique_ptr<IPiece>> pieces;
         vector<Movement> movements;
+        GameBroadcastListener listener;
     };
     
 }

@@ -4,7 +4,7 @@ if(WIN32)
 endif()
 
 add_library(Arduino STATIC 
-	"ISerialPort.hpp"
+	"SerialPort.hpp" "SerialPort.cpp"
 	"SimpleRPC.hpp" "SimpleRPC.cpp"
 	"Serialization.hpp" "Serialization.cpp"
 	"ArduinoChessBoard.h" "ArduinoChessBoard.cpp"

@@ -1,6 +1,5 @@
 #pragma once
 #include "IGameListener.hpp"
-#include "IMovement.hpp"
 
 #include <memory>
 
@@ -9,6 +8,9 @@ namespace MasterChess
     using std::unique_ptr;
 
     struct IBoard;
+    struct IPlayer;
+    struct IMovement;
+    struct IPiece;
 
     struct IInput : IGameListener
     {
