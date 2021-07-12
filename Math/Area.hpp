@@ -22,7 +22,10 @@ namespace Math
         }
 
         Area(Area&&) noexcept = default;
-        Area(const Area&) = default;
+        Area(const Area& area) = default;
+
+        Area& operator=(Area&&) noexcept = default;
+        Area& operator=(const Area & area) = default;
 
         /// <summary>
         /// Adiciona uma posição na área.

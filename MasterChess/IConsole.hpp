@@ -63,7 +63,7 @@ namespace MasterChess
         /// </summary>
         /// <param name="position">Posição do primeiro caractér.</param>
         /// <param name="sv">Texto a ser desenhado.</param>
-        virtual void DrawText(const Vector2Int& position, std::string_view sv) = 0;
+        virtual void DrawString(const Vector2Int& position, std::string_view sv) = 0;
     };
 
 }

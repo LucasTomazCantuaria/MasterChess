@@ -2,7 +2,6 @@
 #include "IGameListener.hpp"
 
 #include <vector>
-#include <chrono>
 #include <memory>
 #include <string>
 
@@ -11,7 +10,7 @@ namespace MasterChess
     using std::string;
     using std::vector;
     using std::unique_ptr;
-    using std::chrono::seconds;
+
     struct IMovement;
     struct ChessPlayer;
     struct IPlayer;
@@ -20,56 +19,66 @@ namespace MasterChess
 
     struct Game
     {
-        struct Player
-        {
-            IPlayer* PlayerReference;
-            IPlayer* operator->() const { return PlayerReference; }
-        };
-
-        struct Movement
-        {
-            IPlayer* Player;
-            unique_ptr<IMovement> Move;
-            seconds Time;
-            Movement(IPlayer* player, unique_ptr<IMovement> move, seconds time);
-        };
-
         struct Result
         {
             vector<IPlayer*> Winners;
             vector<IPlayer*> Losers;
             IBoard* Board;
-            vector<Movement> Movements;
+            vector<IMovement*> Movements;
             string Message;
-            seconds Time;
         };
 
         Game(unique_ptr<IBoard> board, vector<unique_ptr<IPlayer>> players, vector<unique_ptr<IPiece>> pieces);
 
-        virtual bool ValidateMovement(IMovement* movement);
+        Game() = default;
 
-        virtual bool IsGameOver() const;
+        virtual bool ValidateMovement(unique_ptr<IMovement>& movement);
+
+        virtual unique_ptr<Result> IsGameOver(IPlayer* currentPlayer);
 
         Result Play();
 
         IBoard* Board() const { return board.get(); }
 
-        const vector<unique_ptr<IPlayer>>& Players() const { return players; }
+        virtual void SetBoard(unique_ptr<IBoard> board);
 
-        const vector<unique_ptr<IPiece>>& Pieces() const { return pieces; }
-
-        Movement* LastMovement() { return !movements.empty() ? &movements.back() : nullptr; }
+        IMovement* LastMovement() { return !movements.empty() ? movements.back().get() : nullptr; }
 
         void AddListener(IGameListener* listener);
 
+        vector<IPlayer*> Players() const;
+
         IPlayer* Player(int i) const { return players[i].get(); }
+
+        virtual IPlayer* AddPlayer(unique_ptr<IPlayer> player);
+
+        vector<IPiece*> Pieces() const;
+
+        virtual IPiece* AddPiece(unique_ptr<IPiece> piece);
+
+    protected:
+
+        void ExecuteMovement(unique_ptr<IMovement> movement);
+
+        void UndoLastMovement();
+
+        void SimulateMovementExecution(unique_ptr<IMovement>& movement);
+
+        void SimulateMovementUndo(unique_ptr<IMovement>& movement);
 
     private:
         unique_ptr<IBoard> board;
         vector<unique_ptr<IPlayer>> players;
         vector<unique_ptr<IPiece>> pieces;
-        vector<Movement> movements;
-        GameBroadcastListener listener;
+        vector<unique_ptr<IMovement>> movements;
+        struct GameBroadcastListener : IGameListener
+        {
+            void OnGameStart(Game* game) override;
+            void OnMovementExecution(IMovement* movement) override;
+            void AddListener(IGameListener* listener);
+        private:
+            std::vector<IGameListener*> listeners;
+        }listener;
     };
     
 }

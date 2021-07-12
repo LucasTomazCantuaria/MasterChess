@@ -37,9 +37,6 @@ add_subdirectory("Unity")
 add_executable(ConChess "Source.cpp")
 target_link_libraries(ConChess PRIVATE ${ConChessLibs})
 
-add_executable(Proc "Proc.cpp")
-target_link_libraries(Proc PRIVATE ${PROC_LIBS})
-
 add_executable(USB "USB.cpp")
 if(WIN32)
 target_link_libraries(USB PRIVATE fmt::fmt Arduino Windows)

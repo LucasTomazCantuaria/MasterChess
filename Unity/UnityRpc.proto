@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package UnityRpc;
+
+import "google/protobuf/empty.proto";
+
+
+message Vector2Int {
+    int32 x = 1;
+    int32 y = 2;
+}
+
+message PieceMovement {
+    Vector2Int startPos = 1;
+    Vector2Int endPos = 2;
+}
+
+service UnityRPCBoard {
+    rpc Reset(google.protobuf.Empty) returns(google.protobuf.Empty);
+    rpc Move(PieceMovement) returns(google.protobuf.Empty);
+    rpc Castle(PieceMovement) returns(google.protobuf.Empty);
+    rpc EnPassant(PieceMovement) returns(google.protobuf.Empty);
+}

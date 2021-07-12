@@ -30,6 +30,8 @@ namespace MasterChess
 
         IPiece* CastlePiece(int i) const { return castlePieces[i]; }
 
+        bool IsAttacked() const;
+
     private:
         vector<IPiece*> castlePieces;
         bool IsAttacked(const Vector2Int& position) const;

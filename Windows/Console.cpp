@@ -1,17 +1,27 @@
 #include "Console.hpp"
+
 #include <Windows.h>
+
+#include <cassert>
 
 #undef DrawText
 
 namespace Windows
 {
     Console::Console(int rows, int columns) : Rows(rows), Columns(columns),
+        stdHandle(GetStdHandle(STD_OUTPUT_HANDLE)),
         handle(CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, nullptr, CONSOLE_TEXTMODE_BUFFER, nullptr), [](void* handle) { CloseHandle(handle); }),
         buffer((size_t)rows * columns)
     {
         offsets.emplace(Vector2Int::Zero);
-        SetConsoleActiveScreenBuffer(handle.get());
+        auto result = SetConsoleActiveScreenBuffer(handle.get());
+        assert(result);
         ShowWindow(GetConsoleWindow(), SW_SHOWMAXIMIZED);
+    }
+
+    Console::~Console()
+    {
+        SetConsoleActiveScreenBuffer(stdHandle);
     }
 
     char& Console::operator[](const Math::Vector2Int& pos)
@@ -68,11 +78,17 @@ namespace Windows
         operator[](position + offsets.top()) = d;
     }
 
-    void Console::DrawText(const Vector2Int& position, std::string_view sv)
+    void Console::DrawString(const Vector2Int& position, std::string_view sv)
     {
         auto p = position;
         for (auto d : sv)
         {
+            if (d == '\n')
+            {
+                p.x = position.x;
+                ++p.y;
+                continue;
+            }
             DrawPixel(p, d);
             p += Vector2Int::Right;
         }

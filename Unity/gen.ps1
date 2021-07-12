@@ -60,6 +60,10 @@ function FileEqual([string] $f1, [string] $f2)
 
 function CopyIfDiffer([string] $file, [string] $dst)
 {
+    if ($file -eq $dst)
+    {
+        return
+    }
     $dstFile = (Join-Path $dst $file);
     Write-Host 
     if (FileEqual (Join-Path $PSScriptRoot $file) $dstFile)
@@ -76,6 +80,7 @@ function CopyIfDiffer([string] $file, [string] $dst)
         Copy-Item -Path $file -Destination $dst -Force
         Write-Host "File $file copied to the destination $dst."
     }
+    Remove-Item -Path $file
 }
 
 $ffile = [System.IO.Path]::GetFileNameWithoutExtension($file)

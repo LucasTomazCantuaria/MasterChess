@@ -9,8 +9,9 @@ add_library (MasterChess STATIC
     "IInput.hpp"
     "IGameListener.hpp"
     
-    "ChessPlayer.hpp" "ChessPlayer.cpp"
+    "ChessPlayer.hpp"
     "Game.hpp" "Game.cpp"
+    "ChessGame.hpp" "ChessGame.cpp"
 
     "ChessPieces/King.hpp" "ChessPieces/King.cpp"
     "ChessPieces/Queen.hpp" "ChessPieces/Queen.cpp"
@@ -24,8 +25,10 @@ add_library (MasterChess STATIC
     "ChessPieces.hpp"
 
     "Boards/ChessBoard.hpp" "Boards/ChessBoard.cpp"
-    "Boards/ConsoleChessBoard.hpp" "Boards/ConsoleChessBoard.cpp"
+    "Listeners/ConsoleChessGameListener.hpp" "Listeners/ConsoleChessGameListener.cpp"
 
+    "Inputs/StockfishInput.hpp" "Inputs/StockfishInput.cpp"
+    "Inputs/TwoStepsInput.hpp" "Inputs/TwoStepsInput.cpp"
 )
 
 target_link_libraries(MasterChess PUBLIC fmt::fmt)

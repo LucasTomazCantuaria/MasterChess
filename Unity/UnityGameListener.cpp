@@ -5,6 +5,9 @@
 #include <grpcpp/create_channel.h>
 #include <google/protobuf/empty.pb.h>
 
+#include "MasterChess/ChessPieces/King.hpp"
+#include "MasterChess/ChessPieces/Pawn.hpp"
+
 using namespace UnityRpc;
 
 namespace Unity
@@ -30,26 +33,29 @@ namespace Unity
 
     void UnityGameListener::OnMovementExecution(MasterChess::IMovement* movement)
     {
-        std::thread([=]
+        PieceMovement request;
+        auto origin = request.mutable_startpos(),
+            destination = request.mutable_endpos();
+        if (auto m = dynamic_cast<MasterChess::ChessPiece::Movement*>(movement))
         {
-            PieceMovement mov;
-            auto origin = mov.mutable_startpos(),
-                destination = mov.mutable_endpos();
-            if (auto m = dynamic_cast<MasterChess::ChessPiece::Movement*>(movement))
             {
-                {
-                    auto [x, y] = m->Origin();
-                    origin->set_x(x); origin->set_y(y);
-                }
-                {
-                    auto [x, y] = m->Destination();
-                    destination->set_x(x); destination->set_y(y);
-                }
-                grpc::ClientContext ctx;
-                google::protobuf::Empty response;
-                assert(client->Move(&ctx, mov, &response).ok());
+                auto [x, y] = m->Origin();
+                origin->set_x(x); origin->set_y(y);
             }
-        }).detach();
+            {
+                auto [x, y] = m->Destination();
+                destination->set_x(x); destination->set_y(y);
+            }
+            grpc::ClientContext ctx;
+            google::protobuf::Empty response;
+            bool result;
+            if (dynamic_cast<MasterChess::Pawn::EnPassantMovement*>(m))
+                result = client->EnPassant(&ctx, request, &response).ok();
+            else if (dynamic_cast<MasterChess::King::CastleMovement*>(m))
+                result = client->Castle(&ctx, request, &response).ok();
+            else result = client->Move(&ctx, request, &response).ok();
+            assert(result);
+        }
     }
 
 }

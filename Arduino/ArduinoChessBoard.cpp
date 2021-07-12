@@ -1,9 +1,15 @@
 #include "ArduinoChessBoard.h"
+#include "ArduinoExported.h"
+
+#include "MasterChess/ChessPieces/ChessPiece.hpp"
+#include "MasterChess/IPlayer.hpp"
 
 #include <chrono>
 #include <thread>
 
 #include <cassert>
+
+#include "MasterChess/IBoard.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -16,26 +22,32 @@ namespace Arduino
         auto now() { return high_resolution_clock::now(); }
     }
 
-    ArduinoChessBoard::ArduinoChessBoard(MasterChess::IConsole* console, ArduinoExported* arduino) :
-        ConsoleChessBoard(console), arduino(arduino),
-        selectedPiece(nullptr), ignoreLighten(false)
+    ArduinoChessBoard::PlayRequester::PlayRequester(ArduinoChessBoard* board, IInput* underlyingInput): board(board), underlyingInput(underlyingInput)
+    {
+
+    }
+
+    std::unique_ptr<MasterChess::IMovement> ArduinoChessBoard::PlayRequester::CreateMovement(MasterChess::IBoard* b, MasterChess::IPlayer* player)
+    {
+        auto movement = underlyingInput->CreateMovement(b, player);
+        if (auto mov = dynamic_cast<MasterChess::ChessPiece::Movement*>(movement.get()))
+            board->RequestMovement(mov->Piece(), mov->Destination());
+        return move(movement);
+    }
+
+    std::unique_ptr<IPiece> ArduinoChessBoard::PlayRequester::SelectPromotion(MasterChess::IPlayer* player)
+    {
+        return underlyingInput->SelectPromotion(player);
+    }
+
+    ArduinoChessBoard::ArduinoChessBoard(ArduinoExported* arduino, IInput* piecePromotionInput) : arduino(arduino), selectedPiece(nullptr), piecePromotionInput(piecePromotionInput)
     {
         Lighten(-1, -1);
     }
 
-    void ArduinoChessBoard::PrintBoard() const
+    IPiece* ArduinoChessBoard::SelectPiece(MasterChess::IPlayer* currentPlayer)
     {
-        ConsoleChessBoard::PrintBoard();
-        for (auto [color, area] : Colors())
-        {
-            if (color)
-                Lighten(color, Matrix8x8(area).Value);
-            else Lighten(-1, Matrix8x8(area).Value);
-        }
-    }
-
-    IPiece* ArduinoChessBoard::SelectPiece(std::function<bool(IPiece*)> filter)
-    {
+        auto board = game->Board();
     start:
         CheckBoard();
         auto v1 = arduino->ReadMatrix();
@@ -54,8 +66,7 @@ namespace Arduino
                     if (v2 != arduino->ReadMatrix())
                         goto start;
                     delta = duration_cast<milliseconds>(now() - t);
-                }
-                while (delta < 100ms);
+                } while (delta < 100ms);
                 break;
             }
         }
@@ -63,18 +74,17 @@ namespace Arduino
         for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j)
         {
-            if (x(i, j))
-            {
-                auto p = At({i, j});
-                if (!p || !filter(p)) goto start;
-                selectedPiece = p;
-                return p;
-            }
+            if (!x(i, j)) continue;
+            auto p = board->At({ i, j });
+            if (!p || p->Player() != currentPlayer)
+                goto start;
+            selectedPiece = p;
+            return p;
         }
         throw std::runtime_error("Invalid!");
     }
 
-    Vector2Int ArduinoChessBoard::SelectPosition(std::function<bool(const Vector2Int&)> filter)
+    Vector2Int ArduinoChessBoard::SelectPosition(Math::Area a)
     {
         auto area = Matrix8x8(selectedPiece->PossibleMovements().MappedArea() | selectedPiece->Position());
         auto v1 = arduino->ReadMatrix();
@@ -94,8 +104,7 @@ namespace Arduino
                     if (v2 != arduino->ReadMatrix())
                         goto start;
                     delta = duration_cast<milliseconds>(now() - t);
-                }
-                while (delta < 100ms);
+                } while (delta < 100ms);
                 break;
             }
             Lighten(0, area);
@@ -106,63 +115,36 @@ namespace Arduino
         for (int i = 0; i < 8; ++i)
         for (int j = 0; j < 8; ++j)
         {
-            if (x(i, j))
-            {
-                if (!filter({i, j}))
-                    goto start;
-                selectedPiece = nullptr;
-                return {i, j};
-            }
+            if (!x(i, j)) continue;
+            if (!a.IncludesPosition({ i, j }))
+                goto start;
+            selectedPiece = nullptr;
+            return { i, j };
         }
         throw std::runtime_error("Invalid!");
     }
 
-    std::unique_ptr<MasterChess::IMovement> ArduinoChessBoard::CreateMovement(IBoard* board, MasterChess::IPlayer* player)
+    void ArduinoChessBoard::PrintBoard() const
     {
-        while (true)
+        std::unordered_map<uint32_t, Matrix8x8> map;
+        for (auto piece : game->Board()->Pieces())
+            map[piece->Player()->Color()](piece->Position(), true);
+        for (auto [color, area] : map)
         {
-            auto piece = SelectPiece([=](auto p) { return p->Player() == player; });
-            auto start = piece->Position();
-            auto moves = piece->PossibleMovements();
-            auto movArea = moves.MappedArea() | start;
-            board->PushColors();
-            auto end = SelectPosition([&](auto& v) { return movArea.IncludesPosition(v); });
-            board->PopColors();
-            if (start != end)
-                return move(moves[end]);
+            if (color)
+                Lighten(color, Matrix8x8(area).Value);
+            else Lighten(-1, Matrix8x8(area).Value);
         }
     }
 
-    void ArduinoChessBoard::AddPiece(IPiece* piece, const Vector2Int& position)
+    std::unique_ptr<IPiece> ArduinoChessBoard::SelectPromotion(MasterChess::IPlayer* player)
     {
-        ignoreLighten = true;
-        ConsoleChessBoard::AddPiece(piece, position);
-        ignoreLighten = false;
-        LightenArea(position, piece->Player()->Color());
-    }
-
-    void ArduinoChessBoard::RepositionPiece(IPiece* piece, const Vector2Int& position)
-    {
-        ignoreLighten = true;
-        auto p = piece->Position();
-        ConsoleChessBoard::RepositionPiece(piece, position);
-        ignoreLighten = false;
-        LightenArea(p, 0);
-        LightenArea(position, piece->Player()->Color());
-    }
-
-    void ArduinoChessBoard::RemovePiece(IPiece* piece)
-    {
-        ignoreLighten = true;
-        auto p = piece->Position();
-        ConsoleChessBoard::RemovePiece(piece);
-        ignoreLighten = false;
-        LightenArea(p, 0);
+        return piecePromotionInput->SelectPromotion(player);
     }
 
     void ArduinoChessBoard::RequestMovement(IPiece* piece, const Vector2Int& position) const
     {
-        assert(piece->Position() != position && !ignoreLighten && piece->PossibleMovements().MappedArea().IncludesPosition(position));
+        assert(piece->Position() != position && piece->PossibleMovements().MappedArea().IncludesPosition(position));
         auto color = piece->Player()->Color();
         Matrix8x8 m1 = Math::Area(piece->Position());
         Matrix8x8 m2 = Math::Area(position);
@@ -191,10 +173,10 @@ namespace Arduino
 
     void ArduinoChessBoard::CheckBoard() const
     {
-        assert(!ignoreLighten);
+        auto board = game->Board();
         Matrix8x8 ma;
         std::unordered_map<MasterChess::IPlayer*, Matrix8x8> map;
-        for (auto piece : Pieces())
+        for (auto piece : board->Pieces())
         {
             ma(piece->Position(), true);
             map[piece->Player()](piece->Position(), true);
@@ -205,7 +187,7 @@ namespace Arduino
             if (m == ma)
                 break;
             auto x = m ^ ma;
-            auto d = ~ma & m;
+            auto d = m & ~ma;
             Lighten(0, x | d);
             sleep_for(50ms);
             Lighten(-1, d);
@@ -216,13 +198,21 @@ namespace Arduino
 
     void ArduinoChessBoard::OnGameStart(MasterChess::Game* game)
     {
-        ConsoleChessBoard::OnGameStart(game);
         CheckBoard();
+    }
+
+    void ArduinoChessBoard::OnMovementExecution(MasterChess::IMovement* movement)
+    {
+        PrintBoard();
+    }
+
+    MasterChess::ChessGame* ArduinoChessBoard::CurrentGame()
+    {
+        return game;
     }
 
     void ArduinoChessBoard::Lighten(uint32_t color, Matrix8x8 mat) const
     {
-        if (ignoreLighten) return;
         arduino->Lighten(color, mat.Value);
     }
 }

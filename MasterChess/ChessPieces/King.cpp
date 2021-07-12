@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include "MasterChess/Game.hpp"
+
 namespace MasterChess
 {
     King::CastleMovement::CastleMovement(King* king, const Vector2Int& direction, IPiece* castlePiece) :
@@ -62,7 +64,7 @@ namespace MasterChess
 
     MovementMap King::PossibleMovements()
     {
-        auto map = MultiPositionChessPiece::PossibleMovements();
+        auto map = MultiPositionChessPiece::PossibleMovements();        
         if (MovementCount() != 0) return map;
         auto board = Board();
         auto position = Position();
@@ -85,12 +87,29 @@ namespace MasterChess
         return map;
     }
 
+    bool King::IsAttacked() const
+    {
+        return IsAttacked(Position());
+    }
+
     bool King::IsAttacked(const Vector2Int& position) const
     {
         auto board = Board();
         auto team = Player()->Team();
-        for (auto piece : board->Pieces()) if (piece->Id() != Id() && piece->Player()->Team() != team && piece->PossibleMovements().MappedArea().IncludesPosition(position))
-            return true;
+        for (auto piece : board->Pieces())
+        {
+            if (piece->Id() != Id())
+            {
+                if (piece->Player()->Team() != team && piece->PossibleMovements().MappedArea().IncludesPosition(position))
+                    return true;
+            }
+            else if (piece != this)
+            {
+                auto delta = piece->Position() - Position();
+                if (std::abs(delta.x) == 1 && std::abs(delta.y) == 1)
+                    return true;
+            }
+        }
         return false;
     }
 }

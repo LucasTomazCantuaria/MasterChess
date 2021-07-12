@@ -9,11 +9,11 @@ set(UnitySources
     "${UnityFile}.pb.h" "${UnityFile}.pb.cc"
 )
 
-list(TRANSFORM UnitySources PREPEND ${UnityDir})
+list(TRANSFORM UnitySources PREPEND "${UnityDir}generated/")
 
 add_custom_command(
     OUTPUT ${UnitySources}
-    COMMAND powershell ./gen.ps1 ${UnityFile} .
+    COMMAND powershell ./gen.ps1 ${UnityFile} generated
     WORKING_DIRECTORY ${UnityDir}
 )
 

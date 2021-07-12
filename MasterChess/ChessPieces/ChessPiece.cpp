@@ -1,5 +1,6 @@
 #include "ChessPiece.hpp"
 #include "MasterChess/ChessPlayer.hpp"
+#include "MasterChess/IBoard.hpp"
 
 #include <cassert>
 
@@ -52,19 +53,15 @@ namespace MasterChess
     void ChessPiece::CaptureMovement::Execute()
     {
         auto board = captured->Board();
-        board->BeginUpdate();
         board->RemovePiece(captured);
         Movement::Execute();
-        board->EndUpdate();
     }
 
     void ChessPiece::CaptureMovement::Undo()
     {
-        auto board = captured->Board();
-        board->BeginUpdate();
+        auto board = Piece()->Board();
         Movement::Undo();
-        captured->Board()->AddPiece(captured, capturedDestination);
-        board->EndUpdate();
+        board->AddPiece(captured, capturedDestination);
     }
 
     IPiece* ChessPiece::CaptureMovement::Captured() const

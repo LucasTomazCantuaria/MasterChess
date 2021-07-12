@@ -87,56 +87,12 @@ namespace MasterChess
         virtual void RepositionPiece(IPiece* piece, const Vector2Int& position) = 0;
 
         /// <summary>
-        /// Ilumina uma certa área do tabuleiro.
-        /// </summary>
-        /// <param name="area">Area a ser pintada.</param>
-        /// <param name="color">Cor desejada.</param>
-        virtual void LightenArea(const Area& area, uint32_t color) = 0;
-
-        /// <summary>
-        /// Salva as cores do tabuleiro.
-        /// </summary>
-        virtual void PushColors() = 0;
-
-        /// <summary>
-        /// Restaura as cores do tabuleiro.
-        /// </summary>
-        virtual void PopColors() = 0;
-
-        /// <summary>
-        /// Retorna as cores atuais do tabuleiro.
-        /// </summary>
-        /// <returns>Um mapa que relaciona as diferentes cores com posições do tabuleiro.</returns>
-        virtual std::unordered_map<uint32_t, Area> Colors() const = 0;
-
-        /// <summary>
         /// Traça um raio que colide com a primeira peça que esteja no caminho
         /// </summary>
         /// <param name="ray"></param>
         /// <param name="hitInfo"></param>
         /// <returns></returns>
         bool CastRay(const Ray& ray, HitInfo* hitInfo) const;
-
-        /// <summary>
-        /// Começa uma atualização do tabuleiro.
-        /// Deve ser usada quando se tiver que fazer multiplas alterações no tabuleiro para que somente no final sejam aplicadas essas mudanças de uma só vez.
-        /// </summary>
-        /// <remarks>Deve ser usada em conjunto com a função "EndUpdate"</remarks>
-        /// <example>
-        ///     board->BeginUpdate();
-        ///     board->AddPiece(p1, { 0, 0 });
-        ///     board->AddPiece(p2, { 1, 0 });
-        ///     board->AddPiece(p3, { 2, 0 });
-        ///     board->LightenArea(area, color);
-        ///     board->EndUpdate(); //Somente aqui as mudanças são aplicadas no visual do tabuleiro.
-        /// </example>
-        virtual void BeginUpdate() = 0;
-
-        /// <summary>
-        /// Termina a atualização do tabuleiro e aplica as mudanças feitas
-        /// </summary>
-        /// <remarks>Deve ser usada em conjunto com a função "BeginUpdate"</remarks>
-        virtual void EndUpdate() = 0;        
 
         void OnGameStart(Game* game) override
         {

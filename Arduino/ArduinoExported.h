@@ -1,10 +1,10 @@
 #pragma once
-#include <cstdint>
-#include <functional>
-
 #include "SerialPort.hpp"
 #include "Matrix8x8.h"
 #include "SimpleRPC.hpp"
+
+#include <cstdint>
+#include <functional>
 
 namespace Arduino
 {

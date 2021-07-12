@@ -1,6 +1,4 @@
 #pragma once
-#include "IGameListener.hpp"
-
 #include <memory>
 
 namespace MasterChess
@@ -12,7 +10,7 @@ namespace MasterChess
     struct IMovement;
     struct IPiece;
 
-    struct IInput : IGameListener
+    struct IInput
     {
         virtual ~IInput() = default;
         virtual unique_ptr<IMovement> CreateMovement(IBoard* board, IPlayer* player) = 0;

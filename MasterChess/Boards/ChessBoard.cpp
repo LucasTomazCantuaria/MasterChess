@@ -75,30 +75,4 @@ namespace MasterChess
         board[position] = piece;
     }
 
-    void ChessBoard::LightenArea(const Area& area, uint32_t color)
-    {
-        for (auto v : area.Positions())
-            colors[v] = color;
-    }
-
-    void ChessBoard::PushColors()
-    {
-        colorsStack.emplace(colors);
-    }
-
-    void ChessBoard::PopColors()
-    {
-        assert(!colorsStack.empty());
-        colors = colorsStack.top();
-        colorsStack.pop();
-    }
-
-    std::unordered_map<uint32_t, Area> ChessBoard::Colors() const
-    {
-        std::unordered_map<uint32_t, Area> m;
-        for (auto v : BoardArea().Positions())
-            m[colors[v]] |= v;
-        return m;
-    }  
-
 }

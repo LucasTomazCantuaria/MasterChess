@@ -25,12 +25,6 @@ namespace MasterChess
         bool ContainsPiece(IPiece* piece) const override;
         void RemovePiece(IPiece* piece) override;
         void RepositionPiece(IPiece* piece, const Vector2Int& position) override;
-        void LightenArea(const Area& area, uint32_t color) override;
-        void PushColors() override;
-        void PopColors() override;
-        std::unordered_map<uint32_t, Area> Colors() const override;
-        void BeginUpdate() override {  }
-        void EndUpdate() override {  }        
     private:
         template<class T>
         struct _matrix8x8
@@ -47,8 +41,6 @@ namespace MasterChess
             T  operator[](int i) const { return v[i]; }
         };
         _matrix8x8<IPiece*> board;
-        _matrix8x8<uint32_t> colors;
-        std::stack<_matrix8x8<uint32_t>> colorsStack;
     };
     
 }

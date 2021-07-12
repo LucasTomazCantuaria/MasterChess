@@ -25,6 +25,8 @@ namespace Windows
 
         Console(int rows, int columns);
 
+        ~Console();
+
         /// <summary>
         /// Obtem uma referência para um dos digitos do buffer.
         /// </summary>
@@ -39,9 +41,10 @@ namespace Windows
         void DrawSquareBorder(const Vector2Int& position, const Vector2Int& size, char d) override;
         void DrawSquare(const Vector2Int& position, const Vector2Int& size, char d) override;
         void DrawPixel(const Vector2Int& position, char d) override;
-        void DrawText(const Vector2Int& position, std::string_view sv) override;
+        void DrawString(const Vector2Int& position, std::string_view sv) override;
 
     private:
+        void* stdHandle;
         std::unique_ptr<void, void(*)(void*)> handle;
         std::vector<char> buffer;
         std::stack<Vector2Int> offsets;

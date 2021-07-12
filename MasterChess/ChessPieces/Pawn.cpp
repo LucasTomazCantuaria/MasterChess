@@ -46,20 +46,16 @@ namespace MasterChess
         }
         innerMovement->Execute();
         auto board = Piece()->Board();
-        board->BeginUpdate();
         board->RemovePiece(Piece());
         board->AddPiece(promotedPiece.get(), Destination());
-        board->EndUpdate();
     }
 
     void Pawn::PromotionMovement::Undo()
     {
         assert(innerMovement);
         auto board = promotedPiece->Board();
-        board->BeginUpdate();
         board->RemovePiece(promotedPiece.get());
         board->AddPiece(Piece(), Destination());
-        board->EndUpdate();
         innerMovement->Undo();
     }
 
@@ -91,7 +87,7 @@ namespace MasterChess
         if (auto right = position + direction + direction.Perpendicular(); area.IncludesPosition(right) && IsCapturable(right))
             map.emplace(right, CreateMovement(right));
         if (auto last = CurrentGame()->LastMovement())
-        if (auto mov = dynamic_cast<DoubleMovement*>(last->Move.get()))
+        if (auto mov = dynamic_cast<DoubleMovement*>(last))
         if (auto pawn = mov->Piece(); IsCapturable(pawn))
         if (auto pos = pawn->Position(); pos == position + direction.Perpendicular() || pos == position - direction.Perpendicular())
         {

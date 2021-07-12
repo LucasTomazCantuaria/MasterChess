@@ -1,6 +1,6 @@
 #pragma once
-#include "MasterChess/IInput.hpp"
-#include "UnityRpc.grpc.pb.h"
+#include "MasterChess/IGameListener.hpp"
+#include "generated/UnityRpc.grpc.pb.h"
 
 #include <string_view>
 
