@@ -31,7 +31,7 @@ namespace MasterChess
     }
 
     Pawn::PromotionMovement::PromotionMovement(ChessPiece* piece, const Vector2Int& destination, unique_ptr<IMovement> innerMovement) :
-        Movement(piece, destination), innerMovement(move(innerMovement))
+        Movement(piece, destination), innerMovement(move(innerMovement)), promotedPiece(nullptr), board(piece->Board())
     {
 
     }
@@ -40,26 +40,30 @@ namespace MasterChess
     {
         if (!promotedPiece)
         {
-            auto player = Piece()->Player();
-            promotedPiece = player->Input()->SelectPromotion(player);
-            promotedPiece->OnGameStart(Piece()->CurrentGame());
+            auto piece = Piece();
+            auto game = piece->CurrentGame();
+            promotedPiece = game->RequestPromotion(piece);
         }
         innerMovement->Execute();
-        auto board = Piece()->Board();
         board->RemovePiece(Piece());
-        board->AddPiece(promotedPiece.get(), Destination());
+        if (promotedPiece)
+            board->AddPiece(promotedPiece, Destination());
     }
 
     void Pawn::PromotionMovement::Undo()
     {
         assert(innerMovement);
-        auto board = promotedPiece->Board();
-        board->RemovePiece(promotedPiece.get());
-        board->AddPiece(Piece(), Destination());
+        auto piece = Piece();
+        if (promotedPiece)
+            board->RemovePiece(promotedPiece);
+        board->AddPiece(piece, Destination());
         innerMovement->Undo();
     }
 
-    Pawn::Pawn(IPlayer* player, const Vector2Int& direction, Area promotionArea) : ChessPiece(player), direction(direction), promotionArea(std::move(promotionArea))
+    Pawn::Pawn(IPlayer* player, const Vector2Int& direction, Area promotionArea, bool disableDoubleMovement) :
+        ChessPiece(player), direction(direction),
+        promotionArea(std::move(promotionArea)),
+        disableDoubleMovement(disableDoubleMovement)
     {
         
     }
@@ -76,9 +80,8 @@ namespace MasterChess
         if (auto forw = position + direction; IsEmpty(forw))
         {
             map.emplace(forw, std::make_unique<Movement>(this, forw));
-
             forw += direction;
-            if (MovementCount() == 0 && IsEmpty(forw))
+            if (!disableDoubleMovement && MovementCount() == 0 && IsEmpty(forw))
                 map.emplace(forw, std::make_unique<DoubleMovement>(this, forw));
         }
         auto area = Board()->BoardArea();

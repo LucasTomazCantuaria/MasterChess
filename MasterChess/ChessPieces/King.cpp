@@ -68,7 +68,7 @@ namespace MasterChess
         if (MovementCount() != 0) return map;
         auto board = Board();
         auto position = Position();
-        for (auto piece : castlePieces) if (piece->MovementCount() == 0)
+        for (auto piece : castlePieces) if (piece->MovementCount() == 0 && piece->Board() != nullptr)
         {
             auto dir = piece->Position() - position;
             auto& [x, y] = dir;
@@ -106,7 +106,7 @@ namespace MasterChess
             else if (piece != this)
             {
                 auto delta = piece->Position() - Position();
-                if (std::abs(delta.x) == 1 && std::abs(delta.y) == 1)
+                if ((std::abs(delta.x) == 1 || std::abs(delta.y) == 1) && std::abs(delta.x) + std::abs(delta.y) <= 2)
                     return true;
             }
         }

@@ -1,15 +1,14 @@
-#include "ArduinoChessBoard.h"
-#include "ArduinoExported.h"
+#include "ArduinoChessBoard.hpp"
+#include "ArduinoExported.hpp"
 
-#include "MasterChess/ChessPieces/ChessPiece.hpp"
+#include "MasterChess/IBoard.hpp"
 #include "MasterChess/IPlayer.hpp"
+#include "MasterChess/ChessPieces/ChessPiece.hpp"
 
 #include <chrono>
 #include <thread>
 
 #include <cassert>
-
-#include "MasterChess/IBoard.hpp"
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -118,8 +117,11 @@ namespace Arduino
             if (!x(i, j)) continue;
             if (!a.IncludesPosition({ i, j }))
                 goto start;
+            auto v = Vector2Int(i, j);
+            if (selectedPiece->Position() == v)
+                PrintBoard();
             selectedPiece = nullptr;
-            return { i, j };
+            return v;
         }
         throw std::runtime_error("Invalid!");
     }
@@ -129,12 +131,13 @@ namespace Arduino
         std::unordered_map<uint32_t, Matrix8x8> map;
         for (auto piece : game->Board()->Pieces())
             map[piece->Player()->Color()](piece->Position(), true);
+        uint64_t blank = 0;
         for (auto [color, area] : map)
         {
-            if (color)
-                Lighten(color, Matrix8x8(area).Value);
-            else Lighten(-1, Matrix8x8(area).Value);
+            Lighten(color, area);
+            blank |= area.Value;
         }
+        Lighten(-1, ~blank);
     }
 
     std::unique_ptr<IPiece> ArduinoChessBoard::SelectPromotion(MasterChess::IPlayer* player)
@@ -198,6 +201,9 @@ namespace Arduino
 
     void ArduinoChessBoard::OnGameStart(MasterChess::Game* game)
     {
+        assert(dynamic_cast<MasterChess::ChessGame*>(game));
+        this->game = static_cast<MasterChess::ChessGame*>(game);
+        PrintBoard();
         CheckBoard();
     }
 

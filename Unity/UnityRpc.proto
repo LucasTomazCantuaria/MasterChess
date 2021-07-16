@@ -4,6 +4,10 @@ package UnityRpc;
 
 import "google/protobuf/empty.proto";
 
+enum PlayerType {
+	White = 0;
+	Black = 1;
+}
 
 message Vector2Int {
     int32 x = 1;
@@ -11,13 +15,31 @@ message Vector2Int {
 }
 
 message PieceMovement {
-    Vector2Int startPos = 1;
-    Vector2Int endPos = 2;
+	enum PieceType {
+		Queen = 0;
+		Rook = 1;
+		Bishop = 2;
+		Knight = 3;
+	}
+    Vector2Int origin = 1;
+    Vector2Int destination = 2;
+	bool isEnPassant = 3;
+    optional PieceType promotionType = 4;
+    bool isCastling = 5;
+    string fenString = 6;
+	PlayerType currentPlayer = 7;
+}
+
+message Result {
+    enum StatusType {
+        CheckMate = 0;
+        Draw = 1;
+    }
+    StatusType status = 1;
+    repeated PlayerType winners = 2;
+    repeated PlayerType losers = 3;
 }
 
 service UnityRPCBoard {
-    rpc Reset(google.protobuf.Empty) returns(google.protobuf.Empty);
-    rpc Move(PieceMovement) returns(google.protobuf.Empty);
-    rpc Castle(PieceMovement) returns(google.protobuf.Empty);
-    rpc EnPassant(PieceMovement) returns(google.protobuf.Empty);
+    rpc Start(google.protobuf.Empty) returns(stream PieceMovement);
 }

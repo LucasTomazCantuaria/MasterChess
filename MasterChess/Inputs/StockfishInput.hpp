@@ -34,8 +34,6 @@ namespace MasterChess
         ChessBoard* board;
         IPlayer* white;
         std::unique_ptr<StockFish> fish;
-        int peaceCount;
-        int plays;
         King* whiteKing;
         King* blackKing;
         bool whiteLeftRook, whiteRightRook, blackLeftRook, blackRightRook;

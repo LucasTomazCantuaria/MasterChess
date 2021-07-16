@@ -3,6 +3,7 @@
 
 namespace MasterChess
 {
+    struct GameResult;
     struct Game;
     struct IMovement;
     struct IGameListener
@@ -18,6 +19,18 @@ namespace MasterChess
         /// </summary>
         /// <param name="movement"></param>
         virtual void OnMovementExecution(IMovement* movement) {  }
+
+        /// <summary>
+        /// Evento executado quando algum movimento é desfeito.
+        /// </summary>
+        /// <param name="movement"></param>
+        virtual void OnMovementUndo(IMovement* movement) {  }
+
+        /// <summary>
+        /// Executado ao fim de um jogo.
+        /// </summary>
+        /// <param name="result">Resultado do jogo contento as suas informações.</param>
+        virtual void OnGameOver(GameResult* result) {  }
     };    
 
 }

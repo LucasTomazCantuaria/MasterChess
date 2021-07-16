@@ -26,21 +26,25 @@ namespace MasterChess
             void Execute() override;
             void Undo() override;
             IMovement* InnerMovement() const { return innerMovement.get(); }
-            IPiece* PromotedPiece() const { return promotedPiece.get(); }
+            IPiece* PromotedPiece() const { return promotedPiece; }
         private:
             unique_ptr<IMovement> innerMovement;
-            unique_ptr<IPiece> promotedPiece;
+            IPiece* promotedPiece;
+            IBoard* board;
         };
 
-        Pawn(IPlayer* player, const Vector2Int& direction, Area promotionArea);
+        Pawn(IPlayer* player, const Vector2Int& direction, Area promotionArea, bool disableDoubleMovement = false);
 
         char Id() const override;
 
         MovementMap PossibleMovements() override;
 
+        const Vector2Int& Direction() const { return direction; }
+
     private:
         Vector2Int direction;
         Area promotionArea;
+        bool disableDoubleMovement;
     };
     
 }

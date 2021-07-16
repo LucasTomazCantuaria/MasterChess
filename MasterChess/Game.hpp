@@ -17,26 +17,25 @@ namespace MasterChess
     struct IPiece;
     struct IBoard;
 
+    struct GameResult
+    {
+        vector<IPlayer*> Winners;
+        vector<IPlayer*> Losers;
+        IBoard* Board;
+        string Message;
+    };
+
     struct Game
     {
-        struct Result
-        {
-            vector<IPlayer*> Winners;
-            vector<IPlayer*> Losers;
-            IBoard* Board;
-            vector<IMovement*> Movements;
-            string Message;
-        };
+        Game();
 
         Game(unique_ptr<IBoard> board, vector<unique_ptr<IPlayer>> players, vector<unique_ptr<IPiece>> pieces);
 
-        Game() = default;
-
         virtual bool ValidateMovement(unique_ptr<IMovement>& movement);
 
-        virtual unique_ptr<Result> IsGameOver(IPlayer* currentPlayer);
+        virtual unique_ptr<GameResult> IsGameOver(IPlayer* currentPlayer);
 
-        Result Play();
+        GameResult Play();
 
         IBoard* Board() const { return board.get(); }
 
@@ -56,11 +55,17 @@ namespace MasterChess
 
         virtual IPiece* AddPiece(unique_ptr<IPiece> piece);
 
+        int PlayCount() const { return (int)movements.size(); }
+
+        IPlayer* CurrentPlayer() const { return currentPlayer; }
+
+        virtual IPiece* RequestPromotion(IPiece* piece);
+
     protected:
 
-        void ExecuteMovement(unique_ptr<IMovement> movement);
+        virtual void ExecuteMovement(unique_ptr<IMovement> movement);
 
-        void UndoLastMovement();
+        virtual void UndoLastMovement();
 
         void SimulateMovementExecution(unique_ptr<IMovement>& movement);
 
@@ -71,14 +76,18 @@ namespace MasterChess
         vector<unique_ptr<IPlayer>> players;
         vector<unique_ptr<IPiece>> pieces;
         vector<unique_ptr<IMovement>> movements;
+        IPlayer* currentPlayer;
         struct GameBroadcastListener : IGameListener
         {
             void OnGameStart(Game* game) override;
             void OnMovementExecution(IMovement* movement) override;
+            void OnMovementUndo(IMovement* movement) override;
+            void OnGameOver(GameResult* result) override;
             void AddListener(IGameListener* listener);
         private:
             std::vector<IGameListener*> listeners;
         }listener;
+        bool isSimulating;
     };
     
 }

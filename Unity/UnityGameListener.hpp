@@ -2,16 +2,29 @@
 #include "MasterChess/IGameListener.hpp"
 #include "generated/UnityRpc.grpc.pb.h"
 
-#include <string_view>
+#include <string>
+#include <mutex>
+
+namespace MasterChess
+{
+    struct ChessGame;
+}
 
 namespace Unity
 {
-    struct UnityGameListener final : MasterChess::IGameListener
+    struct UnityGameListener final : UnityRpc::UnityRPCBoard::Service, MasterChess::IGameListener
     {
-        explicit UnityGameListener(std::string_view ip, int port);
+        UnityGameListener();
         void OnGameStart(MasterChess::Game* game) override;
         void OnMovementExecution(MasterChess::IMovement* movement) override;
+        void OnMovementUndo(MasterChess::IMovement* movement) override;
+        void OnGameOver(MasterChess::GameResult* result) override;
+        grpc::Status Start(grpc::ServerContext* context, const google::protobuf::Empty* request, grpc::ServerWriter<UnityRpc::PieceMovement>* writer) override;
     private:
-        std::unique_ptr<UnityRpc::UnityRPCBoard::Stub> client;
+        MasterChess::ChessGame* game;
+        std::string lastFen;
+        std::vector<grpc::ServerWriter<UnityRpc::PieceMovement>*> streams;
+        std::mutex m;
+        bool gameOver;
     };
 }

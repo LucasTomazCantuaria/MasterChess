@@ -16,7 +16,12 @@ using namespace std::chrono_literals;
 
 namespace MasterChess
 {
-    Game::Game(unique_ptr<IBoard> board, vector<unique_ptr<IPlayer>> players, vector<unique_ptr<IPiece>> pieces)
+    Game::Game() : currentPlayer(nullptr), isSimulating(false)
+    {
+
+    }
+
+    Game::Game(unique_ptr<IBoard> board, vector<unique_ptr<IPlayer>> players, vector<unique_ptr<IPiece>> pieces) : currentPlayer(nullptr)
     {
         SetBoard(move(board));
         for (auto& player : players)
@@ -30,23 +35,25 @@ namespace MasterChess
         return true;
     }
 
-    unique_ptr<Game::Result> Game::IsGameOver(IPlayer* currentPlayer)
+    unique_ptr<GameResult> Game::IsGameOver(IPlayer* currentPlayer)
     {
         return nullptr;
     }
 
-    Game::Result Game::Play()
+    GameResult Game::Play()
     {
         listener.OnGameStart(this);
         size_t i = 0;
         while (true)
         {
-            if (auto result = IsGameOver(players[i].get()))
+            currentPlayer = players[i].get();
+            if (auto result = IsGameOver(currentPlayer))
+            {
+                listener.OnGameOver(result.get());
                 return *result;
-            auto player = players[i].get();
-            auto input = player->Input();
+            }
             unique_ptr<IMovement> movement;
-            do movement = input->CreateMovement(board.get(), player);
+            do movement = currentPlayer->Input()->CreateMovement(board.get(), currentPlayer);
             while (!ValidateMovement(movement));
             ExecuteMovement(move(movement));
             ++i %= players.size();
@@ -67,6 +74,8 @@ namespace MasterChess
 
     IPlayer* Game::AddPlayer(unique_ptr<IPlayer> player)
     {
+        if (players.empty())
+            currentPlayer = player.get();
         return players.emplace_back(move(player)).get();
     }
 
@@ -82,31 +91,48 @@ namespace MasterChess
         return pieces.emplace_back(move(piece)).get();
     }
 
+    IPiece* Game::RequestPromotion(IPiece* piece)
+    {
+        assert(currentPlayer == piece->Player());
+        if (isSimulating)
+            return nullptr;
+        auto ptr = pieces.emplace_back(currentPlayer->Input()->SelectPromotion(currentPlayer)).get();
+        ptr->OnGameStart(this);
+        return ptr;
+    }
+
     void Game::ExecuteMovement(unique_ptr<IMovement> movement)
     {
-        SimulateMovementExecution(movement);
+        movement->Execute();
+        movements.emplace_back(move(movement));
         listener.OnMovementExecution(LastMovement());
     }
 
     void Game::UndoLastMovement()
     {
-        unique_ptr<IMovement> movement;
-        SimulateMovementUndo(movement);
-        //listener->OnMovementUndo(movement.get());
+        assert(!movements.empty());
+        LastMovement()->Undo();
+        auto movement = move(movements.back());
+        movements.resize(movements.size() - 1);
+        listener.OnMovementUndo(movement.get());
     }
 
     void Game::SimulateMovementExecution(unique_ptr<IMovement>& movement)
     {
+        isSimulating = true;
         movement->Execute();
         movements.emplace_back(move(movement));
+        isSimulating = false;
     }
 
     void Game::SimulateMovementUndo(unique_ptr<IMovement>& movement)
     {
         assert(!movements.empty());
+        isSimulating = true;
         LastMovement()->Undo();
         movement = move(movements.back());
         movements.resize(movements.size() - 1);
+        isSimulating = false;
     }
 
     void Game::SetBoard(unique_ptr<IBoard> board)
@@ -116,14 +142,30 @@ namespace MasterChess
         this->board = move(board);
     }
 
+    template<class Range, class Fn, class... Args>
+    static void pfor(Range&& rng, Fn fn, Args&&... args)
+    {
+        for_each(std::execution::par_unseq, std::begin(rng), std::end(rng), [=](IGameListener* listener) { (listener->*fn)(args...); });
+    }
+
     void Game::GameBroadcastListener::OnGameStart(Game* game)
     {
-        for_each(std::execution::par_unseq, listeners.begin(), listeners.end(), [=](IGameListener* listener) { listener->OnGameStart(game); });
+        pfor(listeners, &IGameListener::OnGameStart, game);
     }
 
     void Game::GameBroadcastListener::OnMovementExecution(IMovement* movement)
     {
-        for_each(std::execution::par_unseq, listeners.begin(), listeners.end(), [=](IGameListener* listener) { listener->OnMovementExecution(movement); });
+        pfor(listeners, &IGameListener::OnMovementExecution, movement);
+    }
+
+    void Game::GameBroadcastListener::OnMovementUndo(IMovement* movement)
+    {
+        pfor(listeners, &IGameListener::OnMovementUndo, movement);
+    }
+
+    void Game::GameBroadcastListener::OnGameOver(GameResult* result)
+    {
+        pfor(listeners, &IGameListener::OnGameOver, result);
     }
 
     void Game::GameBroadcastListener::AddListener(IGameListener* listener)

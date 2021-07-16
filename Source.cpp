@@ -1,5 +1,5 @@
-#include "Arduino/ArduinoChessBoard.h"
-#include "Arduino/ArduinoExported.h"
+#include "Arduino/ArduinoChessBoard.hpp"
+#include "Arduino/ArduinoExported.hpp"
 #include "Arduino/SerialPort.hpp"
 #include "MasterChess/ChessGame.hpp"
 #include "MasterChess/ChessPieces.hpp"
@@ -12,6 +12,7 @@
 #include "Unity/UnityGameListener.hpp"
 #include "Windows/Console.hpp"
 
+#include <grpcpp/server_builder.h>
 #include <fmt/format.h>
 
 namespace MasterChess
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
     using namespace MasterChess;
     using namespace Windows;
     using namespace Arduino;
-    Game::Result result;
+    GameResult result;
     try
     {
         auto console = Console(220, 220);
@@ -62,13 +63,13 @@ int main(int argc, char* argv[])
 
         //auto serial  = SerialPort("COM3", 2000000);
         //auto arduino = ArduinoExported(&serial);
-        //auto board   = std::make_unique<ArduinoChessBoard>(&arduino, &consoleBoard);
+        //auto arduinoBoard = ArduinoChessBoard(&arduino, &consoleBoard);
         //auto req = ArduinoChessBoard::PlayRequester(&*board, &fish);
 
         auto board = std::make_unique<ChessBoard>();
 
-        auto white = std::make_unique<ChessPlayer>(&fish, 1, 0xFF0000),
-             black = std::make_unique<ChessPlayer>(&fish, 2, 0x0000FF);
+        auto white = std::make_unique<ChessPlayer>(&consoleBoard, 1, 0xFF0000),
+             black = std::make_unique<ChessPlayer>(&consoleBoard, 2, 0x0000FF);
 
         auto pieces = CreateArmy(white.get(), &*board, { 0, 0 }, Vector2Int::Right, Vector2Int::Up);
         CreateArmy(pieces, black.get(), &*board, { 0, 7 }, Vector2Int::Right, Vector2Int::Down);
@@ -77,16 +78,22 @@ int main(int argc, char* argv[])
         players.emplace_back(move(white));
         players.emplace_back(move(black));
 
-        ChessGame game{ move(board), move(players), move(pieces) };
+        auto game = ChessGame(move(board), move(players), move(pieces));
 
-        auto unityRpc = Unity::UnityGameListener("localhost", 50051);
+        auto unityRpc = Unity::UnityGameListener();
         game.AddListener(&unityRpc);
 
         game.AddListener(&consoleBoard);
 
         game.AddListener(&fish);
 
+        auto server = grpc::ServerBuilder()
+            .AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials())
+            .RegisterService(&unityRpc)
+            .BuildAndStart();
+
         result = game.Play();
+        server->Shutdown();
     }
     catch (std::exception& e)
     {

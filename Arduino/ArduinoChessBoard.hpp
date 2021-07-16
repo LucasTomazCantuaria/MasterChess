@@ -1,5 +1,5 @@
 #pragma once
-#include "Matrix8x8.h"
+#include "Matrix8x8.hpp"
 #include "MasterChess/ChessGame.hpp"
 #include "MasterChess/ChessPlayer.hpp"
 #include "MasterChess/IGameListener.hpp"

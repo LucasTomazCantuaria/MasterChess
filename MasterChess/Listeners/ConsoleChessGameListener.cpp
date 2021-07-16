@@ -1,5 +1,6 @@
 #include "ConsoleChessGameListener.hpp"
 
+#include "MasterChess/ChessGame.hpp"
 #include "MasterChess/ChessPlayer.hpp"
 #include "MasterChess/Game.hpp"
 #include "MasterChess/IConsole.hpp"
@@ -26,7 +27,8 @@ namespace MasterChess
 
     void ConsoleChessGameListener::OnGameStart(Game* game)
     {
-        this->game = game;
+        assert(dynamic_cast<ChessGame*>(game));
+        this->game = static_cast<ChessGame*>(game);
         assert(dynamic_cast<ChessBoard*>(game->Board()));
         board = static_cast<ChessBoard*>(game->Board());
         PrintBoard();
@@ -35,6 +37,11 @@ namespace MasterChess
     void ConsoleChessGameListener::OnMovementExecution(IMovement* movement)
     {
         PrintBoard();
+    }
+
+    Game* ConsoleChessGameListener::CurrentGame()
+    {
+        return game;
     }
 
     IPiece* ConsoleChessGameListener::SelectPiece(IPlayer* currentPlayer)
@@ -63,7 +70,7 @@ namespace MasterChess
         console->Clear();
 
         for (int i = 0; i < 8; ++i)
-            console->DrawPixel({ 0, i * size.y + size.y / 2 + 1 }, char('1' + i));
+            console->DrawPixel({ 0, i * size.y + size.y / 2 + 1 }, char('8' - i));
 
         console->PushOffset({ 1, 0 });
 
@@ -73,7 +80,7 @@ namespace MasterChess
         console->PushOffset({ 0, 1 });
 
         for (int i = 0; i < 8; ++i)
-            console->DrawPixel({ 8 * size.x, i * size.y + size.y / 2 }, char('1' + i));
+            console->DrawPixel({ 8 * size.x, i * size.y + size.y / 2 }, char('8' - i));
 
         for (int i = 0; i < 8; ++i)
             console->DrawPixel({ i * size.x + size.x / 2, 8 * size.y }, char('A' + i));
@@ -101,6 +108,11 @@ namespace MasterChess
 
         console->PopOffset();
         console->PopOffset();
+
+        auto players = game->Players();
+        auto it = std::find(players.begin(), players.end(), game->CurrentPlayer());
+        console->DrawString({ 100, 27 }, fmt::format("{} turn", it == players.begin() ? "White" : "Black"));
+        console->DrawString({ 100, 28 }, fmt::format("Fen: {}", game->Fen()));
 
         console->Display();
     }

@@ -137,10 +137,10 @@ namespace MasterChess
 
     StockFishInput::StockFishInput():
         game(nullptr), board(nullptr), white(nullptr),
-        fish(std::make_unique<StockFish>()), peaceCount(0), plays(0),
+        fish(std::make_unique<StockFish>()),
         whiteKing(nullptr), blackKing(nullptr),
-        whiteLeftRook(true), whiteRightRook(true),
-        blackLeftRook(true), blackRightRook(true),
+        whiteLeftRook(false), whiteRightRook(false),
+        blackLeftRook(false), blackRightRook(false),
         nextPromotion('Q')
     {
 
@@ -151,7 +151,7 @@ namespace MasterChess
     void StockFishInput::OnGameStart(Game* game)
     {
         this->game = static_cast<ChessGame*>(game);
-        assert(dynamic_cast<ChessBoard*>(game->Board()));
+        assert(dynamic_cast<ChessBoard*>(game->Board()) && "Board must be a ChessBoard!");
         board = static_cast<ChessBoard*>(game->Board());
         white = game->Player(0);
         auto pieces = board->Pieces();
@@ -169,37 +169,32 @@ namespace MasterChess
                 if (whiteKing) break;
             }
         }
+        assert(whiteKing && "White king not found!");
+        assert(blackKing && "Black king not found!");
+        pieces = whiteKing->CastlePieces();
+        whiteLeftRook = !pieces.empty();
+        whiteRightRook = pieces.size() > 1;
+        pieces = blackKing->CastlePieces();
+        blackLeftRook = !pieces.empty();
+        blackRightRook = pieces.size() > 1;
     }
 
     void StockFishInput::OnMovementExecution(IMovement* movement)
     {
-        ++peaceCount;
-        ++plays;
-        if (dynamic_cast<ChessPiece::CaptureMovement*>(movement) || dynamic_cast<Pawn*>(movement->Piece()))
-            peaceCount = 0;
-        if (movement->Piece() == whiteKing->CastlePiece(0))
+        if (whiteLeftRook && (movement->Piece() == whiteKing->CastlePiece(0) || movement->Piece() == whiteKing))
             whiteLeftRook = false;
-        if (movement->Piece() == whiteKing->CastlePiece(1))
+        if (whiteRightRook && (movement->Piece() == whiteKing->CastlePiece(1) || movement->Piece() == whiteKing))
             whiteRightRook = false;
-        if (movement->Piece() == whiteKing)
-        {
-            whiteLeftRook = false;
-            whiteRightRook = false;
-        }
-        if (movement->Piece() == blackKing->CastlePiece(0))
+
+        if (blackLeftRook && (movement->Piece() == blackKing->CastlePiece(0) || movement->Piece() == blackKing))
             blackLeftRook = false;
-        if (movement->Piece() == blackKing->CastlePiece(1))
+        if (blackRightRook && (movement->Piece() == blackKing->CastlePiece(1) || movement->Piece() == blackKing))
             blackRightRook = false;
-        if (movement->Piece() == blackKing)
-        {
-            blackLeftRook = false;
-            blackRightRook = false;
-        }
     }
 
     unique_ptr<IMovement> StockFishInput::CreateMovement(IBoard*, IPlayer* player)
     {
-        auto fen = ToFenString(player);
+        auto fen = game->Fen();
         fish->Command(fmt::format("position fen {}", fen));
         auto [origin, destination, promo, ponder] = fish->Go(5);
         auto piece = board->At(origin);
@@ -271,27 +266,18 @@ namespace MasterChess
             if (token.size() > 1)
                 ss << token;
         }
-        Pawn::EnPassantMovement* enPassant = nullptr;
-        for (auto piece : board->Pieces())
-        if (auto pawn = dynamic_cast<Pawn*>(piece))
+        if (auto doubleMovement = dynamic_cast<Pawn::DoubleMovement*>(game->LastMovement()))
         {
-            for (auto&& [v, movement] : pawn->PossibleMovements())
-                if (enPassant = dynamic_cast<Pawn::EnPassantMovement*>(movement.get()))
-                    break;
-            if (enPassant) break;
-        }
-        if (enPassant)
-        {
-            auto [x, y] = enPassant->Destination();
+            auto [x, y] = doubleMovement->Destination() - doubleMovement->Piece()->Direction();
             ss << ' ';
             ss << char('a' + x);
             ss << char('1' + y);
         }
         else ss << " -";
         ss << ' ';
-        ss << std::to_string(peaceCount);
+        ss << std::to_string(game->PeaceCount());
         ss << ' ';
-        ss << std::to_string(plays);
+        ss << std::to_string(std::max(game->PlayCount(), 1));
         return ss.str();
     }
 }

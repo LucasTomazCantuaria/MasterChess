@@ -9,6 +9,7 @@ namespace MasterChess
     using Math::Area;
     using Math::Vector2Int;
 
+    struct ChessGame;
     struct ChessBoard;
     struct IConsole;
 
@@ -20,7 +21,7 @@ namespace MasterChess
 
         void OnMovementExecution(IMovement* movement) override;
 
-        Game* CurrentGame() override { return game; }
+        Game* CurrentGame() override;
 
         IPiece* SelectPiece(IPlayer* currentPlayer) override;
 
@@ -36,7 +37,7 @@ namespace MasterChess
         IConsole* console;
         Vector2Int size;
         Vector2Int cursor;
-        Game* game;
+        ChessGame* game;
         ChessBoard* board;
         Area colored;
     };

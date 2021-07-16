@@ -36,10 +36,3 @@ add_subdirectory("Unity")
 
 add_executable(ConChess "Source.cpp")
 target_link_libraries(ConChess PRIVATE ${ConChessLibs})
-
-add_executable(USB "USB.cpp")
-if(WIN32)
-target_link_libraries(USB PRIVATE fmt::fmt Arduino Windows)
-else()
-target_link_libraries(USB PRIVATE -lfmt Arduino Linux)
-endif()

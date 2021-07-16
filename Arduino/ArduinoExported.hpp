@@ -1,6 +1,6 @@
 #pragma once
 #include "SerialPort.hpp"
-#include "Matrix8x8.h"
+#include "Matrix8x8.hpp"
 #include "SimpleRPC.hpp"
 
 #include <cstdint>

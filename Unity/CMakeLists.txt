@@ -9,11 +9,16 @@ set(UnitySources
     "${UnityFile}.pb.h" "${UnityFile}.pb.cc"
 )
 
+if (WIN32)
+    set(PluginPath "F:/vcpkg/installed/x64-windows/tools/grpc/grpc_cpp_plugin.exe")
+    set(IncPath "F:/vcpkg/installed/x64-windows/include/")
+endif()
+
 list(TRANSFORM UnitySources PREPEND "${UnityDir}generated/")
 
 add_custom_command(
     OUTPUT ${UnitySources}
-    COMMAND powershell ./gen.ps1 ${UnityFile} generated
+    COMMAND protoc "${UnityFile}.proto" --grpc_out="${UnityDir}generated" --cpp_out="${UnityDir}generated" --plugin=protoc-gen-grpc=${PluginPath} --proto_path=. --proto_path=${IncPath}
     WORKING_DIRECTORY ${UnityDir}
 )
 

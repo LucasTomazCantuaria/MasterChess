@@ -7,9 +7,9 @@ add_library(Arduino STATIC
 	"SerialPort.hpp" "SerialPort.cpp"
 	"SimpleRPC.hpp" "SimpleRPC.cpp"
 	"Serialization.hpp" "Serialization.cpp"
-	"ArduinoChessBoard.h" "ArduinoChessBoard.cpp"
-	"ArduinoExported.h"
-	"Matrix8x8.h"
+	"ArduinoChessBoard.hpp" "ArduinoChessBoard.cpp"
+	"ArduinoExported.hpp"
+	"Matrix8x8.hpp"
  )
 
 if(WIN32)
